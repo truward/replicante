@@ -1,0 +1,6 @@
+Replicante
+==========
+
+Pluggable replication library.
+
+

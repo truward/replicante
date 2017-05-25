@@ -1,22 +1,23 @@
-# Compiled class file
-*.class
+# Maven
+target
 
-# Log file
-*.log
+# Visual Studio Code / dotnet
+.vscode
+project.lock.json
 
-# BlueJ files
-*.ctxt
+# Intellij Idea
+*.iml
+*.ipr
+*.iws
+.idea
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
+# Temporary files
+*.swp
+*.out
+out
 
-# Package Files #
-*.jar
-*.war
-*.ear
-*.zip
-*.tar.gz
-*.rar
+# Mac temp binary
+*.dSYM
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
+.DS_Store
+
