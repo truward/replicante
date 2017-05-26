@@ -11,7 +11,7 @@ import static org.junit.Assert.assertNotNull;
 public class ReplicationManagerTest {
 
   @Test
-  public void shouldOpenAndCloseManager() throws IOException {
+  public void shouldOpenAndCloseManager() throws Exception {
     try (final ReplicationManager manager = new ReplicationManager((ignored) -> {},
         ReplicationManagerSettings.newBuilder()
             .setLocation(ReplicationNodeLocation.from("127.0.0.1:9101"))
