@@ -4,10 +4,7 @@ import com.google.protobuf.ByteString;
 import com.truward.replicante.api.ReplicatedEntity;
 import com.truward.replicante.api.ReplicatedEntityConsumer;
 import com.truward.replicante.api.Replicator;
-import com.truward.replicante.srs.ReplicatedChangeset;
-import com.truward.replicante.srs.ReplicationManagerSettings;
-import com.truward.replicante.srs.ReplicationNode;
-import com.truward.replicante.srs.ReplicationNodeLocation;
+import com.truward.replicante.srs.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,12 +26,13 @@ import java.util.concurrent.locks.ReentrantLock;
 public class ReplicationManager implements AutoCloseable {
   private final Logger log = LoggerFactory.getLogger(getClass());
 
-  private final ReplicatedEntityConsumer consumer;
+  protected final ReplicatedEntityConsumer consumer;
+  protected final ReplicationManagerSettings settings;
   private final List<ReplicationNode> replicationNodes = new CopyOnWriteArrayList<>();
   private ExecutorService executorService;
-  private final ReplicationManagerSettings settings;
   private final Replicator replicator = new BoundReplicator();
   private SenderWorker senderWorker;
+  private final ReplicationNode node = new Node();
 
   public ReplicationManager(ReplicatedEntityConsumer consumer,
                             ReplicationManagerSettings settings) {
@@ -46,19 +44,33 @@ public class ReplicationManager implements AutoCloseable {
     this.executorService.submit(senderWorker);
   }
 
-  public void processChangeset(ReplicatedChangeset changeset) {
-//    for (final ReplicatedEntity entity : changeset.entities) {
-//      replicationCallback.applyReplicatedEntity(entity);
-//    }
-  }
-
   public Replicator getReplicator() {
     return replicator;
+  }
+
+  public ReplicationNode getReplicationNode() {
+    return node;
+  }
+
+  //
+  // Protected
+  //
+
+  // visible for testing
+  protected ReplicationNode createNodeFromLocation(ReplicationNodeLocation location) {
+    // TODO: implement
+    throw new UnsupportedOperationException();
   }
 
   //
   // Private
   //
+
+  private void processChangeset(ReplicatedChangeset changeset) {
+    for (final ReplicatedEntity entity : changeset.getEntities()) {
+      consumer.applyReplicatedEntity(entity);
+    }
+  }
 
   private void enqueueEntity(ReplicatedEntity entity) {
     final ReplicatedChangeset changeset = new ReplicatedChangeset(Collections.singletonList(entity));
@@ -119,6 +131,53 @@ public class ReplicationManager implements AutoCloseable {
     @Override
     public void replicate(ReplicatedEntity entity) {
       ReplicationManager.this.enqueueEntity(entity);
+    }
+  }
+
+  private final class Node implements ReplicationNode {
+
+    @Override
+    public ReplicationNodeLocation getCurrentLocation() {
+      return ReplicationManager.this.settings.getLocation();
+    }
+
+    @Override
+    public List<ReplicationNodeLocation> getClusterLocations() {
+      // TODO: cache locations to avoid potential remote call
+      final List<ReplicationNodeLocation> locations = new ArrayList<>();
+      for (final ReplicationNode n : ReplicationManager.this.replicationNodes) {
+        locations.add(n.getCurrentLocation());
+      }
+      return locations;
+    }
+
+    @Override
+    public void addClusterNode(ReplicationNodeLocation location) {
+      // TODO: locations check, cache locations
+      ReplicationManager.this.replicationNodes.add(ReplicationManager.this.createNodeFromLocation(location));
+    }
+
+    @Override
+    public void removeClusterNode(ReplicationNodeLocation location) {
+      // TODO: implement
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<ReplicationNodeStatus> validateCluster() {
+      // TODO: implement
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ReplicationNodeStatus getStatus() {
+      // TODO: implement
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void processChangeset(ReplicatedChangeset changeset) {
+      ReplicationManager.this.processChangeset(changeset);
     }
   }
 }
