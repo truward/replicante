@@ -10,13 +10,11 @@ import com.truward.replicante.srs.support.ReplicationManager;
 import org.junit.Test;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 public class ReplicationManagerTest {
 
@@ -56,8 +54,8 @@ public class ReplicationManagerTest {
     final StringToIntDao dao2 = app2.getDao();
 
     // Writes to one DAO should be reflected in the other and vice versa
-    dao1.put("one", 1);
-    dao2.put("two", 2);
+    assertNull(dao1.put("one", 1));
+    assertNull(dao2.put("two", 2));
 
     assertEquals(Integer.valueOf(1), dao2.get("one"));
     assertEquals(Integer.valueOf(2), dao1.get("two"));
@@ -97,7 +95,7 @@ public class ReplicationManagerTest {
     private final Map<String, Integer> datastore = new ConcurrentHashMap<>();
     private final Replicator replicator;
 
-    public ReplicationAwareStringToIntDao(Replicator replicator) {
+    ReplicationAwareStringToIntDao(Replicator replicator) {
       this.replicator = replicator;
       this.replicator.setConsumer(this);
     }
