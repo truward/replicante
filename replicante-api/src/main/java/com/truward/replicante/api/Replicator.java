@@ -6,4 +6,6 @@ package com.truward.replicante.api;
 public interface Replicator {
 
   void replicate(ReplicatedEntity entity);
+
+  void setConsumer(ReplicatedEntityConsumer consumer);
 }

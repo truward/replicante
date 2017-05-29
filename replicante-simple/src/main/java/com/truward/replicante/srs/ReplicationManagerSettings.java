@@ -50,6 +50,14 @@ public final class ReplicationManagerSettings {
     return new Builder();
   }
 
+  public static Builder newBuilder(ReplicationManagerSettings settings) {
+    return newBuilder()
+        .setReplicationDelay(settings.getReplicationDelay())
+        .setReplicationDelayTimeUnits(settings.getReplicationDelayTimeUnits())
+        .setLocation(settings.getLocation())
+        .setThreadPoolSize(settings.getThreadPoolSize());
+  }
+
   public static final class Builder {
     private long replicationDelay = 1500L;
     private TimeUnit replicationDelayTimeUnits = TimeUnit.MILLISECONDS;

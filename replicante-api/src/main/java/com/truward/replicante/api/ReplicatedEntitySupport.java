@@ -1,6 +1,9 @@
 package com.truward.replicante.api;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Objects;
 
 /**
@@ -16,6 +19,19 @@ public final class ReplicatedEntitySupport {
 
   public static ReplicatedEntity from(byte[] bytes, int offset, int limit) {
     return new OffsetLimitByteArrayReplicatedEntity(bytes, offset, limit);
+  }
+
+  public static ReplicatedEntity from(WriterCallback callback) {
+    try (final ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+      callback.write(baos);
+      return from(baos.toByteArray());
+    } catch (IOException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  public interface WriterCallback {
+    void write(OutputStream outputStream) throws IOException;
   }
 
   //

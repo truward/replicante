@@ -26,7 +26,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class ReplicationManager implements AutoCloseable {
   private final Logger log = LoggerFactory.getLogger(getClass());
 
-  protected final ReplicatedEntityConsumer consumer;
+  protected volatile ReplicatedEntityConsumer consumer;
   protected final ReplicationManagerSettings settings;
   private final List<ReplicationNode> replicationNodes = new CopyOnWriteArrayList<>();
   private ExecutorService executorService;
@@ -34,9 +34,7 @@ public class ReplicationManager implements AutoCloseable {
   private SenderWorker senderWorker;
   private final ReplicationNode node = new Node();
 
-  public ReplicationManager(ReplicatedEntityConsumer consumer,
-                            ReplicationManagerSettings settings) {
-    this.consumer = Objects.requireNonNull(consumer, "consumer");
+  public ReplicationManager(ReplicationManagerSettings settings) {
     this.settings = Objects.requireNonNull(settings, "settings");
     this.executorService = new ScheduledThreadPoolExecutor(settings.getThreadPoolSize());
 
@@ -67,8 +65,14 @@ public class ReplicationManager implements AutoCloseable {
   //
 
   private void processChangeset(ReplicatedChangeset changeset) {
+    final ReplicatedEntityConsumer c = this.consumer;
+    if (c == null) {
+      // TODO: accumulate temp changes until real consumer becomes available
+      throw new IllegalStateException("Consumer is not yet available");
+    }
+
     for (final ReplicatedEntity entity : changeset.getEntities()) {
-      consumer.applyReplicatedEntity(entity);
+      c.applyReplicatedEntity(entity);
     }
   }
 
@@ -130,7 +134,12 @@ public class ReplicationManager implements AutoCloseable {
 
     @Override
     public void replicate(ReplicatedEntity entity) {
-      ReplicationManager.this.enqueueEntity(entity);
+      ReplicationManager.this.enqueueEntity(Objects.requireNonNull(entity, "entity"));
+    }
+
+    @Override
+    public void setConsumer(ReplicatedEntityConsumer consumer) {
+      ReplicationManager.this.consumer = Objects.requireNonNull(consumer, "consumer");
     }
   }
 
