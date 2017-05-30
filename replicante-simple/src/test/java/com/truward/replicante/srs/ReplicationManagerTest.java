@@ -6,7 +6,7 @@ import com.truward.replicante.api.ReplicatedEntity;
 import com.truward.replicante.api.ReplicatedEntityConsumer;
 import com.truward.replicante.api.ReplicatedEntitySupport;
 import com.truward.replicante.api.Replicator;
-import com.truward.replicante.srs.support.ReplicationManager;
+import com.truward.replicante.srs.support.ImmediateReplicationManager;
 import org.junit.Test;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -20,7 +20,7 @@ public class ReplicationManagerTest {
 
   @Test
   public void shouldOpenAndCloseManager() throws Exception {
-    try (final ReplicationManager manager = new ReplicationManager(
+    try (final ImmediateReplicationManager manager = new ImmediateReplicationManager(
         ReplicationManagerSettings.newBuilder()
             .setLocation(ReplicationNodeLocation.from("127.0.0.1:9101"))
             .setReplicationDelay(500L)
@@ -38,16 +38,16 @@ public class ReplicationManagerTest {
     final ReplicationNodeLocation location1 = ReplicationNodeLocation.from("1");
     final ReplicationNodeLocation location2 = ReplicationNodeLocation.from("2");
 
-    final Map<ReplicationNodeLocation, TestReplicationManager> managerMap = new ConcurrentHashMap<>();
-    final StringToIntApplicationNode app1 = new StringToIntApplicationNode(managerMap, location1);
-    final StringToIntApplicationNode app2 = new StringToIntApplicationNode(managerMap, location2);
+    final Map<ReplicationNodeLocation, TestReplicationManager> testManagerMap = new ConcurrentHashMap<>();
+    final StringToIntApplicationNode app1 = new StringToIntApplicationNode(testManagerMap, location1);
+    final StringToIntApplicationNode app2 = new StringToIntApplicationNode(testManagerMap, location2);
 
-    managerMap.put(location1, app1.manager);
-    managerMap.put(location2, app2.manager);
+    testManagerMap.put(location1, app1.manager);
+    testManagerMap.put(location2, app2.manager);
 
     // Make nodes aware about each other
-    app1.manager.getReplicationNode().addClusterNode(location2);
-    app2.manager.getReplicationNode().addClusterNode(location1);
+    app1.manager.addClusterNode(location2);
+    app2.manager.addClusterNode(location1);
 
     // Operate with two distinct DAOs simultaneously
     final StringToIntDao dao1 = app1.getDao();
@@ -134,7 +134,7 @@ public class ReplicationManagerTest {
   }
 
   @ParametersAreNonnullByDefault
-  private static final class TestReplicationManager extends ReplicationManager {
+  private static final class TestReplicationManager extends ImmediateReplicationManager {
     private final Map<ReplicationNodeLocation, TestReplicationManager> testNodeMap;
 
     TestReplicationManager(
@@ -151,7 +151,7 @@ public class ReplicationManagerTest {
         throw new AssertionError("Unable to get other node");
       }
 
-      return other.getReplicationNode();
+      return other;
     }
   }
 }
